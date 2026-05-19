@@ -37,7 +37,8 @@ DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")
 
 if not DISCORD_BOT_TOKEN:
-    raise ValueError("DISCORD_BOT_TOKEN not found in .env file")
+    print("[FATAL] DISCORD_BOT_TOKEN not found in .env file", flush=True)
+    sys.exit(1)
 
 # Bot setup with required intents
 intents = discord.Intents.default()
@@ -1138,22 +1139,28 @@ async def on_command_error(ctx, error):
 
 def main():
     """Main entry point"""
+    print("[MAIN] Starting...", flush=True)
     if not DISCORD_BOT_TOKEN:
         logger.error("DISCORD_BOT_TOKEN not found in environment variables!")
         logger.error("Please create a .env file with your bot token.")
         return
     
-    logger.info("Starting Discord AI Server Setup Bot...")
-    logger.info("Press Ctrl+C to stop the bot")
+    print(f"[MAIN] Token length: {len(DISCORD_BOT_TOKEN)}", flush=True)
+    print("[MAIN] Import checks OK, calling bot.run()...", flush=True)
     
     try:
         bot.run(DISCORD_BOT_TOKEN)
     except discord.LoginFailure:
         logger.error("Failed to login - invalid bot token!")
+        print("[MAIN] LoginFailure", flush=True)
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
+        print("[MAIN] KeyboardInterrupt", flush=True)
     except Exception as e:
         logger.error(f"Bot crashed with error: {e}", exc_info=True)
+        print(f"[MAIN] Crash: {e}", flush=True)
+        import traceback
+        traceback.print_exc(file=sys.stdout)
 
 
 if __name__ == "__main__":
