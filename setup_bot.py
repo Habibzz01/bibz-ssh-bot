@@ -1157,7 +1157,7 @@ async def help_command(ctx):
         "`!check-detection` - Preview cleanup targets\n"
         "`!migrate-markers` - Add [DSBOT] to legacy channels\n\n"
         "**━━━ VPS / VPN Management ━━━**\n"
-        "`!add-server <name> <host> [port]` - Register VPS\n"
+        "`!add-server <name> <host> [port] [user] [pass]` - Register VPS\n"
         "`!remove-server <name>` - Remove VPS\n"
         "`!list-servers` - List registered VPS\n"
         "`!setup-server <name>` - Install all services\n"
@@ -1178,9 +1178,9 @@ async def help_command(ctx):
 
 @bot.command(name="add-server")
 @commands.has_permissions(administrator=True)
-async def add_server_cmd(ctx, name: str, host: str, port: int = 22):
+async def add_server_cmd(ctx, name: str, host: str, port: int = 22, username: str = "root", password: str = ""):
     """Register a new VPS server
-    Usage: !add-server <name> <host> [port]
+    Usage: !add-server <name> <host> [port] [username] [password]
     """
     if ctx.guild is None:
         await ctx.send("❌ This command can only be used in a server, not in DMs.")
@@ -1188,11 +1188,13 @@ async def add_server_cmd(ctx, name: str, host: str, port: int = 22):
 
     await ctx.send(f"Adding server `{name}` at {host}:{port}...")
 
-    success = add_server(name, host, "root", port, key="", password="")
+    success = add_server(name, host, username, port, key="", password=password)
     if success:
-        await ctx.send(f"✅ Server `{name}` added successfully.\n"
-                       "To set a password for SSH access, type `!set-password <name> <password>` or edit `servers.json` directly.\n"
-                       "Use `!setup-server <name>` to install services.")
+        if password:
+            await ctx.send(f"✅ Server `{name}` registered as `{username}@{host}:{port}`.\n"
+                           "Use `!setup-server <name>` to install services.")
+        else:
+            await ctx.send(f"✅ Server `{name}` registered (no password set). Use `!add-server` again with a password to enable SSH access.")
     else:
         await ctx.send(f"❌ Server `{name}` already exists. Use `!remove-server {name}` first.")
 
