@@ -30,7 +30,7 @@ case $ACTION in
         fi
         useradd -m -s /bin/bash "$USERNAME"
         echo "$USERNAME:$PASSWORD" | chpasswd
-        usermod -aG sudo "$USERNAME"
+        true
         echo "ADDED:$USERNAME"
         ;;
     remove)

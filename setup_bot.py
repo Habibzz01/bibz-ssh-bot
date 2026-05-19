@@ -1205,14 +1205,14 @@ async def add_server_cmd(ctx, name: str, host: str, port: int = 22, username: st
     await ctx.send(f"✅ Server `{name}` registered. Starting automatic setup...")
 
     install_script = get_install_script()
-    write_cmd = f"cat << 'SCRIPTEOF' > /tmp/setup.sh\n{install_script}\nSCRIPTEOF\nchmod +x /tmp/setup.sh\nsudo bash /tmp/setup.sh"
+    write_cmd = f"cat << 'SCRIPTEOF' > /tmp/setup.sh\n{install_script}\nSCRIPTEOF\nchmod +x /tmp/setup.sh\nbash /tmp/setup.sh"
     await ctx.send("📦 Installing services (5-10 menit)...")
     success, output = await ssh_exec(name, write_cmd, timeout=600)
 
     if success:
         await ctx.send("✅ Services installed. Initializing OpenVPN PKI...")
         easyrsa_script = get_easyrsa_script()
-        ovpn_cmd = f"cat << 'EASYRSAEOF' > /tmp/easyrsa-setup.sh\n{easyrsa_script}\nEASYRSAEOF\nchmod +x /tmp/easyrsa-setup.sh\nsudo bash /tmp/easyrsa-setup.sh"
+        ovpn_cmd = f"cat << 'EASYRSAEOF' > /tmp/easyrsa-setup.sh\n{easyrsa_script}\nEASYRSAEOF\nchmod +x /tmp/easyrsa-setup.sh\nbash /tmp/easyrsa-setup.sh"
         ovpn_success, ovpn_output = await ssh_exec(name, ovpn_cmd, timeout=120)
         status = "✅ OpenVPN ready." if ovpn_success else "⚠️ OpenVPN PKI issue."
         await ctx.send(f"✅ **`{name}` siap!** {status}\n"
@@ -1302,7 +1302,7 @@ async def setup_server_cmd(ctx, name: str):
     install_script = get_install_script()
 
     await ctx.send("📦 Transferring install script to server...")
-    write_cmd = f"cat << 'SCRIPTEOF' > /tmp/setup.sh\n{install_script}\nSCRIPTEOF\nchmod +x /tmp/setup.sh\nsudo bash /tmp/setup.sh"
+    write_cmd = f"cat << 'SCRIPTEOF' > /tmp/setup.sh\n{install_script}\nSCRIPTEOF\nchmod +x /tmp/setup.sh\nbash /tmp/setup.sh"
     success, output = await ssh_exec(name, write_cmd, timeout=600)
 
     if success:
@@ -1310,7 +1310,7 @@ async def setup_server_cmd(ctx, name: str):
 
         await ctx.send("🔑 Initializing OpenVPN PKI...")
         easyrsa_script = get_easyrsa_script()
-        ovpn_cmd = f"cat << 'EASYRSAEOF' > /tmp/easyrsa-setup.sh\n{easyrsa_script}\nEASYRSAEOF\nchmod +x /tmp/easyrsa-setup.sh\nsudo bash /tmp/easyrsa-setup.sh"
+        ovpn_cmd = f"cat << 'EASYRSAEOF' > /tmp/easyrsa-setup.sh\n{easyrsa_script}\nEASYRSAEOF\nchmod +x /tmp/easyrsa-setup.sh\nbash /tmp/easyrsa-setup.sh"
         ovpn_success, ovpn_output = await ssh_exec(name, ovpn_cmd, timeout=120)
 
         if ovpn_success:
@@ -1339,7 +1339,7 @@ async def add_ssh_cmd(ctx, server: str, username: str, password: str):
         return
 
     await ctx.send(f"Creating SSH user `{username}` on `{server}`...")
-    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-ssh.sh add {username} {password}")
+    success, output = await ssh_exec(server, f"/opt/bibz-bot/manage-ssh.sh add {username} {password}")
 
     if success and "ADDED" in output:
         await ctx.send(f"✅ SSH user `{username}` created on `{server}`.\n```\n{output}\n```")
@@ -1364,7 +1364,7 @@ async def add_vmess_cmd(ctx, server: str, username: str):
         return
 
     await ctx.send(f"Creating VMess account for `{username}` on `{server}`...")
-    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-xray.sh add {username} vmess")
+    success, output = await ssh_exec(server, f"/opt/bibz-bot/manage-xray.sh add {username} vmess")
 
     if success:
         await ctx.send(f"✅ VMess account created for `{username}` on `{server}`.\n```\n{output}\n```")
@@ -1387,7 +1387,7 @@ async def add_wireguard_cmd(ctx, server: str, username: str):
         return
 
     await ctx.send(f"Creating WireGuard config for `{username}` on `{server}`...")
-    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-wg.sh add {username}")
+    success, output = await ssh_exec(server, f"/opt/bibz-bot/manage-wg.sh add {username}")
 
     if success:
         # Extract config from output
@@ -1420,7 +1420,7 @@ async def add_openvpn_cmd(ctx, server: str, username: str):
         return
 
     await ctx.send(f"Creating OpenVPN account for `{username}` on `{server}`...")
-    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-ovpn.sh add {username}")
+    success, output = await ssh_exec(server, f"/opt/bibz-bot/manage-ovpn.sh add {username}")
 
     if success:
         await ctx.send(f"✅ OpenVPN account created for `{username}` on `{server}`.\n```\n{output}\n```")
@@ -1443,7 +1443,7 @@ async def add_slowdns_cmd(ctx, server: str, username: str):
         return
 
     await ctx.send(f"Creating SlowDNS account for `{username}` on `{server}`...")
-    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-slowdns.sh add {username}")
+    success, output = await ssh_exec(server, f"/opt/bibz-bot/manage-slowdns.sh add {username}")
 
     if success:
         host = ""
@@ -1475,7 +1475,7 @@ async def list_users_cmd(ctx, server: str):
         return
 
     await ctx.send(f"Fetching users from `{server}`...")
-    success, output = await ssh_exec(server, "sudo /opt/bibz-bot/manage-ssh.sh list")
+    success, output = await ssh_exec(server, "/opt/bibz-bot/manage-ssh.sh list")
 
     if success:
         users = [u.strip() for u in output.split("\n") if u.strip()]
@@ -1520,7 +1520,7 @@ async def remove_user_cmd(ctx, server: str, username: str, service: str = "ssh")
         return
 
     await ctx.send(f"Removing `{username}` from {service} on `{server}`...")
-    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/{script} {username}")
+    success, output = await ssh_exec(server, f"/opt/bibz-bot/{script} {username}")
 
     if success:
         await ctx.send(f"✅ User `{username}` removed from {service} on `{server}`.")
