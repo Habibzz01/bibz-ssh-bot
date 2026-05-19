@@ -1160,7 +1160,7 @@ async def help_command(ctx):
         "`!add-server <name> <host> [port] [user] [pass]` - Register VPS\n"
         "`!remove-server <name>` - Remove VPS\n"
         "`!list-servers` - List registered VPS\n"
-        "`!setup-server <name>` - Install all services\n"
+        "`!setup-server <name>` - Auto-installs after add-server\n"
         "`!add-ssh <server> <user> <pass>` - Create SSH user\n"
         "`!add-vmess <server> <user>` - Create VMess account\n"
         "`!add-wireguard <server> <user>` - WireGuard config\n"
@@ -1186,17 +1186,34 @@ async def add_server_cmd(ctx, name: str, host: str, port: int = 22, username: st
         await ctx.send("❌ This command can only be used in a server, not in DMs.")
         return
 
-    await ctx.send(f"Adding server `{name}` at {host}:{port}...")
+    if not password:
+        await ctx.send("❌ Password is required. Usage: `!add-server <name> <host> [port] [username] [password]`")
+        return
+
+    await ctx.send(f"🔧 Registering `{name}` at `{username}@{host}:{port}`...")
 
     success = add_server(name, host, username, port, key="", password=password)
-    if success:
-        if password:
-            await ctx.send(f"✅ Server `{name}` registered as `{username}@{host}:{port}`.\n"
-                           "Use `!setup-server <name>` to install services.")
-        else:
-            await ctx.send(f"✅ Server `{name}` registered (no password set). Use `!add-server` again with a password to enable SSH access.")
-    else:
+    if not success:
         await ctx.send(f"❌ Server `{name}` already exists. Use `!remove-server {name}` first.")
+        return
+
+    await ctx.send(f"✅ Server `{name}` registered. Starting automatic setup...")
+
+    install_script = get_install_script()
+    write_cmd = f"cat << 'SCRIPTEOF' > /tmp/setup.sh\n{install_script}\nSCRIPTEOF\nchmod +x /tmp/setup.sh\nsudo bash /tmp/setup.sh"
+    await ctx.send("📦 Installing services (5-10 menit)...")
+    success, output = await ssh_exec(name, write_cmd, timeout=600)
+
+    if success:
+        await ctx.send("✅ Services installed. Initializing OpenVPN PKI...")
+        easyrsa_script = get_easyrsa_script()
+        ovpn_cmd = f"cat << 'EASYRSAEOF' > /tmp/easyrsa-setup.sh\n{easyrsa_script}\nEASYRSAEOF\nchmod +x /tmp/easyrsa-setup.sh\nsudo bash /tmp/easyrsa-setup.sh"
+        ovpn_success, ovpn_output = await ssh_exec(name, ovpn_cmd, timeout=120)
+        status = "✅ OpenVPN ready." if ovpn_success else "⚠️ OpenVPN PKI issue."
+        await ctx.send(f"✅ **`{name}` siap!** {status}\n"
+                       "Gunakan `!add-ssh`, `!add-vmess`, `!add-wireguard`, `!add-openvpn`, `!add-slowdns` buat bikin akun.")
+    else:
+        await ctx.send(f"❌ Gagal install di `{name}`:\n```\n{output[:1500]}\n```")
 
 
 @bot.command(name="remove-server")
