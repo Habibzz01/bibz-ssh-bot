@@ -1,6 +1,5 @@
 INSTALL_ALL = r"""#!/bin/bash
 # Bibz SSH Bot - Install all services on fresh VPS
-set -e
 
 if [ "$EUID" -ne 0 ]; then
     echo "Please run as root (sudo)"
@@ -8,10 +7,11 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 echo "=== Updating system ==="
-apt-get update -qq && apt-get upgrade -y -qq
+apt-get update -qq 2>/dev/null
+apt-get upgrade -y -qq 2>/dev/null
 
 echo "=== Installing base packages ==="
-apt-get install -y -qq curl wget python3 python3-pip iptables ufw openssl qrencode
+apt-get install -y -qq curl wget python3 python3-pip iptables ufw openssl qrencode 2>/dev/null
 
 echo "=== 1. Setting up SSH Management ==="
 mkdir -p /opt/bibz-bot
@@ -49,7 +49,9 @@ MANAGE_SCRIPT
 chmod +x /opt/bibz-bot/manage-ssh.sh
 
 echo "=== 2. Installing Xray (VMess/VLess) ==="
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+if ! command -v xray &>/dev/null; then
+    bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install 2>/dev/null || true
+fi
 cat > /usr/local/etc/xray/config.json << 'XRAY_CONFIG'
 {
   "log": {"loglevel": "warning"},
@@ -123,7 +125,7 @@ for inbound in c.get('inbounds', []):
 esac
 XRAY_MANAGE
 chmod +x /opt/bibz-bot/manage-xray.sh
-systemctl restart xray || true
+systemctl restart xray 2>/dev/null || true
 
 echo "=== 3. Installing WireGuard ==="
 apt-get install -y -qq wireguard
@@ -198,6 +200,8 @@ WG_MANAGE
 chmod +x /opt/bibz-bot/manage-wg.sh
 
 # Enable WireGuard
+WG_DIR="/etc/wireguard"
+mkdir -p $WG_DIR
 cat > $WG_DIR/wg0.conf << 'WG_BASE'
 [Interface]
 PrivateKey = 
@@ -206,18 +210,14 @@ ListenPort = 51820
 SaveConfig = false
 WG_BASE
 # Generate keys
-wg genkey | tee $WG_DIR/server.key | wg pubkey > $WG_DIR/server.pub
-chmod 600 $WG_DIR/server.key
-SERVER_PUB=$(cat $WG_DIR/server.pub)
-PRIV=$(cat $WG_DIR/server.key)
-sed -i "s|PrivateKey = |PrivateKey = $PRIV|" $WG_DIR/wg0.conf
-
-# Start WireGuard
-systemctl enable wg-quick@wg0 2>/dev/null || true
-ufw allow 51820/udp 2>/dev/null || true
+wg genkey 2>/dev/null | tee $WG_DIR/server.key | wg pubkey > $WG_DIR/server.pub 2>/dev/null
+chmod 600 $WG_DIR/server.key 2>/dev/null
+SERVER_PUB=$(cat $WG_DIR/server.pub 2>/dev/null)
+PRIV=$(cat $WG_DIR/server.key 2>/dev/null)
+sed -i "s|PrivateKey = |PrivateKey = $PRIV|" $WG_DIR/wg0.conf 2>/dev/null
 
 echo "=== 4. Installing OpenVPN ==="
-apt-get install -y -qq openvpn easy-rsa
+apt-get install -y -qq openvpn easy-rsa 2>/dev/null
 mkdir -p /opt/bibz-bot/openvpn
 cat > /opt/bibz-bot/manage-ovpn.sh << 'OVPN_MANAGE'
 #!/bin/bash
@@ -253,8 +253,7 @@ OVPN_MANAGE
 chmod +x /opt/bibz-bot/manage-ovpn.sh
 
 echo "=== 5. Installing SlowDNS ==="
-# SlowDNS setup using ssh-server + dnstt
-apt-get install -y -qq build-essential golang-go git
+apt-get install -y -qq build-essential golang-go git 2>/dev/null
 if [ ! -f /usr/local/bin/dnstt-server ]; then
     git clone https://github.com/habibzadeh/dnstt.git /tmp/dnstt 2>/dev/null || true
     cd /tmp/dnstt 2>/dev/null && go build -o /usr/local/bin/dnstt-server ./server 2>/dev/null || true
