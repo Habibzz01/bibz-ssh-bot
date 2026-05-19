@@ -112,7 +112,7 @@ print('added')
         VMESS_JSON="{\"v\":\"2\",\"ps\":\"$USERNAME\",\"add\":\"$HOST\",\"port\":\"$PORT\",\"id\":\"$UUID\",\"aid\":\"0\",\"scy\":\"auto\",\"net\":\"ws\",\"type\":\"none\",\"host\":\"\",\"path\":\"/vmess\",\"tls\":\"\"}"
         VMESS_LINK=$(echo -n "$VMESS_JSON" | base64 -w0 2>/dev/null || python3 -c "import base64,sys;print(base64.urlsafe_b64encode(sys.stdin.buffer.read()).decode())" 2>/dev/null || echo "$UUID")
         echo "vmess://$VMESS_LINK"
-        pkill -HUP xray 2>/dev/null || true
+        pgrep -x xray && kill -HUP $(pgrep -x xray) 2>/dev/null || true
         ;;
     remove)
         python3 -c "
@@ -126,7 +126,7 @@ for i in c['inbounds']:
 json.dump(c,open('$CONFIG_FILE','w'),indent=2)
 print('removed $USERNAME')
 " 2>/dev/null || echo "REMOVED:$USERNAME"
-        pkill -HUP xray 2>/dev/null || true
+        pgrep -x xray && kill -HUP $(pgrep -x xray) 2>/dev/null || true
         ;;
     list)
         python3 -c "
