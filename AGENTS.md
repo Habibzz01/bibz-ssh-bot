@@ -12,29 +12,34 @@ Script: `./run.sh` (auto-creates venv)
 
 ## Environment
 
-`.env` file required:
-```
-DISCORD_BOT_TOKEN=<token>
-GUILD_ID=<optional, restrict to one server>
-```
-
-- `setup_bot.py` reads only `DISCORD_BOT_TOKEN`. Previously `setup.py` (now `legacy_setup.py`) read `DISCORD_TOKEN`.
-- `.env` is gitignored; never commit secrets.
+No `.env` needed — token is hardcoded in `setup_bot.py`.
+- `GUILD_ID` is hardcoded to `None` (no server restriction).
 
 ## Railway Deployment
 
 - **Platform:** Railway.app — Nixpacks builder (auto-detects Python via `requirements.txt`)
 - **Config:** `railway.json` in repo root
 - **Start command:** `python setup_bot.py` (set via Railway API)
-- **Env vars:** `DISCORD_BOT_TOKEN` must be set in Railway dashboard or API
+- **No env vars needed** — token is in the script.
 
 ### Railway gotchas
 - `setup.py` **must be renamed** (e.g. `legacy_setup.py`) — Nixpacks confuses it with a package setup script and the deployment crashes.
 - `Dockerfile` + `docker-compose.yml` removed — Nixpacks only.
 - No Docker needed; Railway builds and runs directly.
-- Logs accessible via Railway GraphQL API (`logsV2` field).
-- Deploy via `serviceInstanceDeployV2` mutation or git push.
-- Token: `6eb9ebc4-2947-4f86-9376-06cd644088c6`
+- Logs accessible via Railway Dashboard web UI.
+- Deploy via `serviceInstanceDeployV2` mutation (pass `commitSha` explicitly).
+- Railway API token: `6eb9ebc4-2947-4f86-9376-06cd644088c6`
+- Project ID: `d7abe167-df09-42bd-9f35-c6181260b772`
+- Service ID: `7c2659fe-f86b-4849-97d4-8a53b8546917`
+- Environment ID: `d74a499a-b8ef-473a-9455-e578899d56fc`
+
+### Deploy command
+```bash
+curl -s -H "Authorization: Bearer 6eb9ebc4-2947-4f86-9376-06cd644088c6" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\":\"mutation { serviceInstanceDeployV2(serviceId: \\\"7c2659fe-f86b-4849-97d4-8a53b8546917\\\", environmentId: \\\"d74a499a-b8ef-473a-9455-e578899d56fc\\\", commitSha: \\\"$(git rev-parse HEAD)\\\") }\"}" \
+  "https://backboard.railway.app/graphql/v2"
+```
 
 ## Architecture
 
