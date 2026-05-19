@@ -1162,7 +1162,8 @@ async def help_command(ctx):
         "`!check-detection` - Preview cleanup targets\n"
         "`!migrate-markers` - Add [DSBOT] to legacy channels\n\n"
         "**━━━ VPS / VPN Management ━━━**\n"
-        "`!add-server <name> <host> [port] [user] [pass]` - Register VPS\n"
+         "`!local [name]` - Run bot locally (proot/termux, no SSH)\n"
+         "`!add-server <name> <host> [port] [user] [pass]` - Register VPS\n"
         "`!remove-server <name>` - Remove VPS\n"
         "`!list-servers` - List registered VPS\n"
         "`!setup-server <name>` - Auto-installs after add-server\n"
@@ -1219,6 +1220,40 @@ async def add_server_cmd(ctx, name: str, host: str, port: int = 22, username: st
                        "Gunakan `!add-ssh`, `!add-vmess`, `!add-wireguard`, `!add-openvpn`, `!add-slowdns` buat bikin akun.")
     else:
         await ctx.send(f"❌ Gagal install di `{name}`:\n```\n{output[:1500]}\n```")
+
+
+@bot.command(name="local")
+@commands.has_permissions(administrator=True)
+async def local_cmd(ctx, name: str = "proot"):
+    """Run bot locally (no SSH) - for proot/termux
+    Usage: !local [name]
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    if get_server(name):
+        await ctx.send(f"❌ Server `{name}` already exists. Use `!remove-server {name}` first.")
+        return
+
+    add_server(name, "localhost", "root", 22, local=True)
+    await ctx.send(f"✅ Local mode `{name}` registered. Installing services...")
+
+    install_script = get_install_script()
+    write_cmd = f"cat << 'SCRIPTEOF' > /tmp/setup.sh\n{install_script}\nSCRIPTEOF\nchmod +x /tmp/setup.sh\nbash /tmp/setup.sh"
+    await ctx.send("📦 Installing services...")
+    success, output = await ssh_exec(name, write_cmd, timeout=600)
+
+    if success:
+        await ctx.send("✅ Services installed. Initializing OpenVPN PKI...")
+        easyrsa_script = get_easyrsa_script()
+        ovpn_cmd = f"cat << 'EASYRSAEOF' > /tmp/easyrsa-setup.sh\n{easyrsa_script}\nEASYRSAEOF\nchmod +x /tmp/easyrsa-setup.sh\nbash /tmp/easyrsa-setup.sh"
+        ovpn_success, ovpn_output = await ssh_exec(name, ovpn_cmd, timeout=120)
+        status = "✅ OpenVPN ready." if ovpn_success else "⚠️ OpenVPN PKI issue."
+        await ctx.send(f"✅ **`{name}` siap!** {status}\n"
+                       "Gunakan `!add-ssh`, `!add-vmess`, `!add-wireguard`, `!add-openvpn`, `!add-slowdns` buat bikin akun.")
+    else:
+        await ctx.send(f"❌ Gagal install:\n```\n{output[:1500]}\n```")
 
 
 @bot.command(name="remove-server")

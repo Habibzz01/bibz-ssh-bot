@@ -33,7 +33,7 @@ def save_servers():
         logger.error(f"Failed to save servers: {e}")
 
 
-def add_server(name: str, host: str, user: str, port: int = 22, key: str = "", password: str = "") -> bool:
+def add_server(name: str, host: str, user: str, port: int = 22, key: str = "", password: str = "", local: bool = False) -> bool:
     if name in _server_registry:
         return False
     _server_registry[name] = {
@@ -42,6 +42,7 @@ def add_server(name: str, host: str, user: str, port: int = 22, key: str = "", p
         "port": port,
         "key": key,
         "password": password,
+        "local": local,
     }
     save_servers()
     return True
@@ -67,6 +68,25 @@ async def ssh_exec(server_name: str, command: str, timeout: int = 60) -> tuple:
     info = get_server(server_name)
     if not info:
         return (False, "Server not found")
+
+    if info.get("local"):
+        try:
+            proc = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+            out = stdout.decode() if stdout else ""
+            err = stderr.decode() if stderr else ""
+            if proc.returncode == 0:
+                return (True, out)
+            else:
+                return (False, err or out)
+        except asyncio.TimeoutError:
+            return (False, "Command timed out")
+        except Exception as e:
+            return (False, f"Error: {e}")
 
     try:
         kwargs = {
