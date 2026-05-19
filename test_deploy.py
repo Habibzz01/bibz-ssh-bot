@@ -11,10 +11,7 @@ print(f"[DIAG] discord.py: {discord.__version__}")
 from discord.ext import commands
 print(f"[DIAG] commands module OK")
 
-from dotenv import load_dotemon
-print(f"[DIAG] dotenv OK")
-except Exception as e:
-    print(f"[DIAG] dotenv import failed: {e}")
+print(f"[DIAG] dotenv not needed")
 
 try:
     from server_config import SERVER_CONFIG

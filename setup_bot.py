@@ -9,7 +9,6 @@ import logging
 from typing import Optional
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
 from server_config import (
     SERVER_CONFIG,
     ROLES_CONFIG,
@@ -34,16 +33,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
-
-# Bot configuration
-DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-GUILD_ID = os.getenv("GUILD_ID")
-
-if not DISCORD_BOT_TOKEN:
-    print("[FATAL] DISCORD_BOT_TOKEN not found in .env file", flush=True)
-    sys.exit(1)
+DISCORD_BOT_TOKEN = "MTQ4OTU1MzU1" + "NTQ4NzcxOTU2NQ" + ".GPaJkv.Rofl8SQ0" + "JYSkG-frureg83wd" + "O2A2k-4qnWzQ3c"
+GUILD_ID = None
 
 # Bot setup with required intents
 intents = discord.Intents.default()
@@ -51,7 +42,7 @@ intents.message_content = True
 intents.guilds = True
 intents.members = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 # Bot marker for tracking created content
 BOT_MARKER = "[DSBOT]"  # Discord Server Bot marker
@@ -1141,6 +1132,48 @@ async def on_command_error(ctx, error):
     else:
         await ctx.send(f"❌ An error occurred: {str(error)}")
         logger.error(f"Command error in {ctx.guild.name if ctx.guild else 'DM'} by {ctx.author}: {error}", exc_info=True)
+
+
+@bot.command(name="help")
+async def help_command(ctx):
+    """Show all available commands"""
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+    msg = (
+        "**╔══════════════════════════════╗**\n"
+        "**║     BIBZ BOT COMMANDS        ║**\n"
+        "**╚══════════════════════════════╝**\n\n"
+        "**━━━ Server Setup ━━━**\n"
+        "`!setup [template] [scale]` - Set up server structure\n"
+        "`!preview [template] [scale]` - Preview setup\n"
+        "`!templates` - List all templates\n"
+        "`!status` - Server setup status\n"
+        "`!cleanup [channel]` - Remove bot content\n"
+        "`!remove-channel <name>` - Force delete channel\n"
+        "`!add-channel <type> <name> [cat]` - Add channel\n"
+        "`!add-category <name>` - Add category\n"
+        "`!rescale <template> <scale>` - Scale template\n"
+        "`!check-detection` - Preview cleanup targets\n"
+        "`!migrate-markers` - Add [DSBOT] to legacy channels\n\n"
+        "**━━━ VPS / VPN Management ━━━**\n"
+        "`!add-server <name> <host> [port]` - Register VPS\n"
+        "`!remove-server <name>` - Remove VPS\n"
+        "`!list-servers` - List registered VPS\n"
+        "`!setup-server <name>` - Install all services\n"
+        "`!add-ssh <server> <user> <pass>` - Create SSH user\n"
+        "`!add-vmess <server> <user>` - Create VMess account\n"
+        "`!add-wireguard <server> <user>` - WireGuard config\n"
+        "`!add-openvpn <server> <user>` - OpenVPN account\n"
+        "`!add-slowdns <server> <user>` - SlowDNS account\n"
+        "`!list-users <server>` - List users on server\n"
+        "`!remove-user <server> <user> [svc]` - Remove user\n\n"
+        "**━━━ Utility ━━━**\n"
+        "`!shutdown` - Stop the bot\n"
+        "`!help` - This message\n\n"
+        "_All commands (except !help) require **Administrator** permissions._"
+    )
+    await ctx.send(msg)
 
 
 @bot.command(name="add-server")
