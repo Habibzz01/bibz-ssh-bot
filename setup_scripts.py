@@ -125,7 +125,13 @@ for inbound in c.get('inbounds', []):
 esac
 XRAY_MANAGE
 chmod +x /opt/bibz-bot/manage-xray.sh
-systemctl restart xray 2>/dev/null || true
+# Start Xray directly (no systemd in proot)
+if command -v xray &>/dev/null; then
+    XRAY_KEY=$(/usr/local/bin/xray x25519 2>/dev/null | grep "^PrivateKey:" | sed "s/PrivateKey: //")
+    python3 -c "import json;c=json.load(open('/usr/local/etc/xray/config.json'));[i['streamSettings']['realitySettings'].update({'privateKey':'$XRAY_KEY'}) for i in c['inbounds'] if 'realitySettings' in i.get('streamSettings',{})];json.dump(c,open('/usr/local/etc/xray/config.json','w'),indent=2)" 2>/dev/null || true
+    nohup /usr/local/bin/xray run -c /usr/local/etc/xray/config.json > /tmp/xray.log 2>&1 &
+    sleep 2
+fi
 
 echo "=== 3. Installing WireGuard ==="
 apt-get install -y -qq wireguard
