@@ -549,3 +549,202 @@ EXTENDED_TEMPLATES["esports"] = {
     "welcome": "# Welcome to the Team\!\n\nCheck schedules in team channels.",
     "resources": "# Resources\n\n• Team roster\n• Match schedules\n• Strategy guides",
 }
+
+# ═══════════════════════════════════════════════════════════════
+#               BIBZ SSH SERVER TEMPLATE
+# ═══════════════════════════════════════════════════════════════
+
+EXTENDED_TEMPLATES["bibz-ssh"] = {
+    "name": "BIBZ SSH SERVER",
+    "description": "Premium SSH & VPN Server | Fast Connection | 24/7 Support",
+    "config": {
+        "categories": [
+            {
+                "name": "≫ WELCOME & INFO ≪",
+                "position": 0,
+                "channels": [
+                    {"name": "welcome", "type": "text", "topic": "✦ Selamat datang di BIBZ SSH SERVER ✦"},
+                    {"name": "rules", "type": "text", "topic": "📜 Aturan main server BIBZ - baca dulu ya"},
+                    {"name": "announcements", "type": "text", "topic": "📢 Pengumuman terbaru dari admin BIBZ"},
+                    {"name": "server-status", "type": "text", "topic": "📊 Status server live [ONLINE/OFFLINE/MAINTENANCE]"},
+                ],
+            },
+            {
+                "name": "◈ GENERAL CHAT ◈",
+                "position": 1,
+                "channels": [
+                    {"name": "general-chat", "type": "text", "topic": "💬 Ngobrol santai bareng member BIBZ"},
+                    {"name": "introductions", "type": "text", "topic": "👋 Perkenalan diri dulu yuk"},
+                    {"name": "off-topic", "type": "text", "topic": "🎯 Diskusi di luar topik SSH/VPN"},
+                    {"name": "shoutbox", "type": "text", "topic": "📣 Kirim shoutout ke sesama member"},
+                ],
+            },
+            {
+                "name": "✦ SSH ACCOUNTS ✦",
+                "position": 2,
+                "channels": [
+                    {"name": "free-account", "type": "text", "topic": "🆓 Claim SSH gratis setiap hari - limited"},
+                    {"name": "premium-account", "type": "text", "topic": "💎 Akun Premium SSH - speed max & stable"},
+                    {"name": "vip-account", "type": "text", "topic": "👑 VIP Account - prioritas tinggi"},
+                    {"name": "trial-request", "type": "text", "topic": "🎁 Request trial akun SSH dulu"},
+                    {"name": "account-checker", "type": "text", "topic": "🔍 Cek status akun & masa aktif"},
+                ],
+            },
+            {
+                "name": "◈ SERVER LOCATION ◈",
+                "position": 3,
+                "channels": [
+                    {"name": "sg-singapore", "type": "text", "topic": "🇸🇬 Singapore DC - Best Quality"},
+                    {"name": "jp-japan", "type": "text", "topic": "🇯🇵 Japan - Speed Max Stable"},
+                    {"name": "us-usa", "type": "text", "topic": "🇺🇸 USA - West/East Coast"},
+                    {"name": "de-germany", "type": "text", "topic": "🇩🇪 Germany - Europe Best"},
+                    {"name": "id-indonesia", "type": "text", "topic": "🇮🇩 Indonesia - Local Host"},
+                    {"name": "nl-netherlands", "type": "text", "topic": "🇳🇱 Netherlands - AMS DC"},
+                ],
+            },
+            {
+                "name": "✦ TUNNEL CONFIG ✦",
+                "position": 4,
+                "channels": [
+                    {"name": "ssh-websocket", "type": "text", "topic": "🔌 Config SSH WebSocket + TLS"},
+                    {"name": "ssh-ssl", "type": "text", "topic": "🔒 Config SSH + SSL/TLS"},
+                    {"name": "v2ray-vmess", "type": "text", "topic": "📡 Config V2Ray Vmess WS + TLS"},
+                    {"name": "wireguard", "type": "text", "topic": "🛡️ Config WireGuard"},
+                    {"name": "openvpn", "type": "text", "topic": "🔓 Config OpenVPN TCP/UDP"},
+                    {"name": "slowdns", "type": "text", "topic": "🐌 Config SlowDNS"},
+                ],
+            },
+            {
+                "name": "≫ SUPPORT CENTER ≪",
+                "position": 5,
+                "channels": [
+                    {"name": "faq", "type": "text", "topic": "❓ Pertanyaan yang sering ditanyakan"},
+                    {"name": "ticket-support", "type": "text", "topic": "🎫 Buat ticket untuk dibantu admin"},
+                    {"name": "report-issue", "type": "text", "topic": "🐛 Lapor error/bug server"},
+                    {"name": "admin-help", "type": "text", "topic": "🆘 Hubungi admin langsung"},
+                ],
+            },
+            {
+                "name": "◈ PRICE & ORDER ◈",
+                "position": 6,
+                "channels": [
+                    {"name": "price-list", "type": "text", "topic": "💵 Daftar harga produk BIBZ SSH"},
+                    {"name": "promo-special", "type": "text", "topic": "🔥 Promo & diskon spesial hari ini"},
+                    {"name": "payment-info", "type": "text", "topic": "💳 Info pembayaran (QRIS/Transfer)"},
+                    {"name": "payment-confirm", "type": "text", "topic": "✅ Konfirmasi pembayaran di sini"},
+                ],
+            },
+            {
+                "name": "✦ VIP LOUNGE ✦",
+                "position": 7,
+                "channels": [
+                    {"name": "vip-chat", "type": "text", "topic": "💎 Chat eksklusif member VIP"},
+                    {"name": "exclusive-config", "type": "text", "topic": "🔐 Config khusus VIP - tidak bocor"},
+                    {"name": "early-access", "type": "text", "topic": "⏰ Akses server baru duluan"},
+                    {"name": "vip-support", "type": "text", "topic": "🎖️ Support prioritas untuk VIP"},
+                ],
+            },
+            {
+                "name": "♫ VOICE ROOMS ♫",
+                "position": 8,
+                "channels": [
+                    {"name": "Support Room", "type": "voice", "topic": "🎧 Voice support dari admin"},
+                    {"name": "Chill Zone", "type": "voice", "topic": "🎵 Santai dan ngobrol bareng"},
+                ],
+            },
+        ],
+    },
+    "roles": [
+        {"name": "Owner BIBZ", "color": 0xFF0000, "permissions": ["administrator"], "hoist": True, "mentionable": True},
+        {"name": "Admin BIBZ", "color": 0xE74C3C, "permissions": ["manage_channels", "manage_messages", "kick_members", "ban_members"], "hoist": True, "mentionable": True},
+        {"name": "Reseller", "color": 0x3498DB, "permissions": ["manage_messages"], "hoist": True, "mentionable": True},
+        {"name": "Premium", "color": 0xF1C40F, "permissions": [], "hoist": True, "mentionable": False},
+        {"name": "VIP", "color": 0x9B59B6, "permissions": [], "hoist": True, "mentionable": False},
+        {"name": "Free User", "color": 0x2ECC71, "permissions": [], "hoist": False, "mentionable": False},
+    ],
+    "rules": (
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "       **ATURAN MAIN BIBZ SSH SERVER**\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "**1 BERSIKAP SOPAN**\n"
+        "• Hormati sesama member dan admin\n"
+        "• Dilarang toxic, spam, atau bully\n"
+        "• Jaga kata-kata tetap santun\n\n"
+        "**2 DILARANG SHARING AKUN**\n"
+        "• Akun gratis = 1 device, jangan disebar\n"
+        "• Akun premium = sesuai paket\n"
+        "• Sharing akun = kena banned\n\n"
+        "**3 GUNAKAN CHANNEL DENGAN BENAR**\n"
+        "• Chat di channel yang sesuai topik\n"
+        "• Jangan spam di channel support\n"
+        "• Gunakan ticket untuk masalah pribadi\n\n"
+        "**4 DILARANG SCAM**\n"
+        "• Jual beli hanya via reseller resmi\n"
+        "• Admin tidak bertanggung jawab atas transaksi ilegal\n"
+        "• Lapor admin jika menemukan penipuan\n\n"
+        "**5 PATUHI KEPUTUSAN ADMIN**\n"
+        "• Keputusan admin bersifat mutlak\n"
+        "• Jika tidak setuju, silakan DM admin\n"
+        "• Membantah di publik = warn/mute\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "      **Terima kasih Join BIBZ SSH**\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ),
+    "welcome": (
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "     **WELCOME TO BIBZ SSH SERVER**\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Halo! :wave:\n\n"
+        "Terima kasih sudah bergabung di **BIBZ SSH SERVER** | "
+        "Server SSH & VPN terbaik dengan koneksi **stabil**!\n\n"
+        "--- **Quick Guide** ---\n\n"
+        "**1** Baca aturan di <#rules>\n"
+        "**2** Kenalin diri di <#introductions>\n"
+        "**3** Cek harga di <#price-list>\n"
+        "**4** Claim akun gratis di <#free-account>\n"
+        "**5** Butuh bantuan? Buka <#ticket-support>\n\n"
+        "--- **Server Locations** ---\n\n"
+        ":flag_sg: Singapore | :flag_jp: Japan | :flag_us: USA\n"
+        ":flag_de: Germany | :flag_id: Indonesia | :flag_nl: Netherlands\n\n"
+        "--- **Contact** ---\n\n"
+        "Admin: <#admin-help>\n"
+        "Lapor bug: <#report-issue>\n"
+        "Chat umum: <#general-chat>\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "     **Selamat menikmati!**\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ),
+    "resources": (
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "        **INFO PENTING BIBZ SSH**\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "--- **Cara Claim Akun Free** ---\n\n"
+        "1. Buka channel <#free-account>\n"
+        "2. Ketik command atau request manual\n"
+        "3. Admin akan kirim akun via DM\n"
+        "4. Akun aktif **24 jam** (free)\n\n"
+        "--- **Cara Order Premium** ---\n\n"
+        "1. Cek harga di <#price-list>\n"
+        "2. Transfer ke rekening yang tertera\n"
+        "3. Konfirmasi di <#payment-confirm>\n"
+        "4. Akun dikirim max **10 menit**\n\n"
+        "--- **Pembayaran** ---\n\n"
+        ":credit_card: QRIS - All payment (OVO/GoPay/Dana)\n"
+        ":bank: Transfer Bank - BCA/Mandiri/BNI\n"
+        ":phone: Pulsa - Telkomsel/XL (via <#payment-info>)\n\n"
+        "--- **Tunnel Tersedia** ---\n\n"
+        ":electric_plug: SSH WebSocket + TLS\n"
+        ":lock: SSH + SSL/TLS\n"
+        ":satellite: V2Ray Vmess WS + TLS\n"
+        ":shield: WireGuard\n"
+        ":unlock: OpenVPN TCP/UDP\n"
+        ":snail: SlowDNS\n\n"
+        "--- **Garansi** ---\n\n"
+        "Garansi **100%** - akun tidak bisa dipakai? Ganti baru!\n"
+        "Support **24/7** - tinggal chat di <#ticket-support>\n"
+        "Server **stabil** - koneksi cepat & stabil\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "   **Terima kasih sudah memilih BIBZ!**\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ),
+}
