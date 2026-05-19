@@ -1385,25 +1385,24 @@ async def add_vmess_cmd(ctx, server: str, username: str):
         return
 
     await ctx.send(f"Creating VMess account for `{username}` on `{server}`...")
-    success, output = await ssh_exec(server, f"/opt/bibz-bot/manage-xray.sh add {username} vmess")
+    info = get_server(server)
+    host = info["host"]
+    success, output = await ssh_exec(server, f"/opt/bibz-bot/manage-xray.sh add {username} vmess {host}")
 
     if success:
-        info = get_server(server)
-        host = info["host"]
-        uuid = output.strip().split(":")[0] if ":" in output else output.strip()
+        vmess_link = output.strip()
         config = (
             f"━━━ VMESS ACCOUNT ━━━\n"
             f"Address  : {host}\n"
             f"Port     : 9443\n"
             f"Username : {username}\n"
-            f"UUID     : {uuid}\n"
-            f"AlterID  : 0\n"
-            f"Security : auto\n"
             f"Network  : ws\n"
             f"Path     : /vmess\n"
             f"TLS      : false\n"
             f"────────────────────\n"
-            f"Config payload:\n"
+            f"VMess Link:\n{vmess_link}\n"
+            f"────────────────────\n"
+            f"Payload:\n"
             f"GET /vmess HTTP/1.1[crlf]Host: {host}[crlf]Upgrade: websocket[crlf][crlf]\n"
         )
         try:

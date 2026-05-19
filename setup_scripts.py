@@ -92,34 +92,53 @@ cat > /opt/bibz-bot/manage-xray.sh << 'XRAY_MANAGE'
 ACTION=$1
 USERNAME=$2
 TYPE=${3:-vmess}
-PORT=${4:-443}
-
-UUID=$(cat /proc/sys/kernel/random/uuid)
+HOST=${4:-localhost}
 CONFIG_FILE="/usr/local/etc/xray/config.json"
 
 case $ACTION in
     add)
-        KEY=$(/usr/local/bin/xray x25519 2>/dev/null | grep "Private key" | awk '{print $3}')
-        if [ -z "$KEY" ]; then KEY=""; fi
-        
-        # Generate config snippet
-        echo "${UUID}:${TYPE}:${USERNAME}"
+        UUID=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || uuidgen 2>/dev/null || echo "xxxxxxxx-xxxx-xxxx-xxxx-$(openssl rand -hex 8 | sed 's/\(....\)\(....\)\(....\)\(....\)/\1-\2-\3-\4/')")
+        PORT=$(python3 -c "import json;c=json.load(open('$CONFIG_FILE'));[print(i['port']) for i in c['inbounds'] if i['protocol']=='vmess']" 2>/dev/null || echo "9443")
+        python3 -c "
+import json
+c=json.load(open('$CONFIG_FILE'))
+for i in c['inbounds']:
+    if i['protocol']=='vmess':
+        i['settings']['clients'].append({'id':'$UUID','email':'$USERNAME'})
+json.dump(c,open('$CONFIG_FILE','w'),indent=2)
+print('added')
+" 2>/dev/null || true
+        # Generate vmess:// link
+        VMESS_JSON="{\"v\":\"2\",\"ps\":\"$USERNAME\",\"add\":\"$HOST\",\"port\":\"$PORT\",\"id\":\"$UUID\",\"aid\":\"0\",\"scy\":\"auto\",\"net\":\"ws\",\"type\":\"none\",\"host\":\"\",\"path\":\"/vmess\",\"tls\":\"\"}"
+        VMESS_LINK=$(echo -n "$VMESS_JSON" | base64 -w0 2>/dev/null || python3 -c "import base64,sys;print(base64.urlsafe_b64encode(sys.stdin.buffer.read()).decode())" 2>/dev/null || echo "$UUID")
+        echo "vmess://$VMESS_LINK"
+        pkill -HUP xray 2>/dev/null || true
         ;;
     remove)
-        echo "REMOVED:$USERNAME"
+        python3 -c "
+import json
+c=json.load(open('$CONFIG_FILE'))
+for i in c['inbounds']:
+    if i['protocol']=='vmess':
+        i['settings']['clients']=[cl for cl in i['settings']['clients'] if cl.get('email')!='$USERNAME']
+    if i['protocol']=='vless':
+        i['settings']['clients']=[cl for cl in i['settings']['clients'] if cl.get('email')!='$USERNAME']
+json.dump(c,open('$CONFIG_FILE','w'),indent=2)
+print('removed $USERNAME')
+" 2>/dev/null || echo "REMOVED:$USERNAME"
+        pkill -HUP xray 2>/dev/null || true
         ;;
     list)
         python3 -c "
 import json
-with open('$CONFIG_FILE') as f:
-    c = json.load(f)
-for inbound in c.get('inbounds', []):
-    for client in inbound.get('settings', {}).get('clients', []):
-        print(f\"{client.get('id','?')} ({inbound.get('protocol','?')})\")
-        " 2>/dev/null || echo "none"
+c=json.load(open('$CONFIG_FILE'))
+for i in c['inbounds']:
+    for cl in i['settings'].get('clients',[]):
+        print(f\"{cl.get('id','?')} ({i['protocol']}) [{cl.get('email','?')}]\")
+" 2>/dev/null || echo "none"
         ;;
     *)
-        echo "Usage: $0 {add|remove|list} [username] [type]"
+        echo "Usage: $0 {add|remove|list} [username] [host]"
         exit 1
         ;;
 esac
