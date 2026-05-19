@@ -1345,10 +1345,23 @@ async def add_ssh_cmd(ctx, server: str, username: str, password: str):
         info = get_server(server)
         host = info["host"]
         port = info.get("port", 22)
-        config = f"=== SSH Account ===\nHost: {host}\nPort: {port}\nUser: {username}\nPass: {password}\n\nssh -p {port} {username}@{host}"
+        config = (
+            f"━━━ SSH ACCOUNT ━━━\n"
+            f"Host     : {host}\n"
+            f"Port     : {port}\n"
+            f"Username : {username}\n"
+            f"Password : {password}\n"
+            f"────────────────────\n"
+            f"SSH Dropbear:\n"
+            f"ssh -p {port} {username}@{host}\n\n"
+            f"SSH OpenSSH:\n"
+            f"ssh -oHostKeyAlgorithms=+ssh-rsa -p {port} {username}@{host}\n\n"
+            f"SSH UDPGW:\n"
+            f"ssh -p {port} -o UDPGW=:7300 {username}@{host}\n"
+        )
         try:
             await ctx.author.send(f"```\n{config}\n```")
-            await ctx.send(f"✅ SSH user `{username}` created. Cek DM buat config lengkapnya.")
+            await ctx.send(f"✅ SSH user `{username}` created. Cek DM buat config lengkap.")
         except:
             await ctx.send(f"✅ SSH user `{username}` created on `{server}`.\n```\n{config}\n```")
     elif success and "EXISTS" in output:
@@ -1377,10 +1390,25 @@ async def add_vmess_cmd(ctx, server: str, username: str):
     if success:
         info = get_server(server)
         host = info["host"]
-        config = f"=== VMess Account ===\nHost: {host}\nPort: 9443\nUser: {username}\nUUID: {output.strip()}\nPath: /vmess\nNetwork: ws\n\nvmess://... (salin UUID di atas)"
+        uuid = output.strip().split(":")[0] if ":" in output else output.strip()
+        config = (
+            f"━━━ VMESS ACCOUNT ━━━\n"
+            f"Address  : {host}\n"
+            f"Port     : 9443\n"
+            f"Username : {username}\n"
+            f"UUID     : {uuid}\n"
+            f"AlterID  : 0\n"
+            f"Security : auto\n"
+            f"Network  : ws\n"
+            f"Path     : /vmess\n"
+            f"TLS      : false\n"
+            f"────────────────────\n"
+            f"Config payload:\n"
+            f"GET /vmess HTTP/1.1[crlf]Host: {host}[crlf]Upgrade: websocket[crlf][crlf]\n"
+        )
         try:
             await ctx.author.send(f"```\n{config}\n```")
-            await ctx.send(f"✅ VMess account for `{username}` created. Cek DM.")
+            await ctx.send(f"✅ VMess account `{username}` created. Cek DM.")
         except:
             await ctx.send(f"✅ VMess account created.\n```\n{config}\n```")
     else:
@@ -1411,17 +1439,19 @@ async def add_wireguard_cmd(ctx, server: str, username: str):
                 config = line[7:]
                 break
         if config:
+            msg = f"━━━ WIREGUARD ACCOUNT ━━━\n{config}\n"
             try:
-                await ctx.author.send(f"```\n=== WireGuard Config ===\n{config}\n```")
+                await ctx.author.send(f"```\n{msg}\n```")
                 await ctx.send(f"✅ WireGuard config for `{username}` created. Cek DM.")
             except:
-                await ctx.send(f"✅ WireGuard config:\n```\n{config}\n```")
+                await ctx.send(f"✅ WireGuard config:\n```\n{msg}\n```")
         else:
+            msg = f"━━━ WIREGUARD ACCOUNT ━━━\nUsername: {username}\n{output}\n"
             try:
-                await ctx.author.send(f"```\n{output}\n```")
+                await ctx.author.send(f"```\n{msg}\n```")
                 await ctx.send(f"✅ WireGuard account `{username}` created. Cek DM.")
             except:
-                await ctx.send(f"✅ WireGuard account created.\n```\n{output}\n```")
+                await ctx.send(f"✅ WireGuard account created.\n```\n{msg}\n```")
     else:
         await ctx.send(f"❌ Failed to create WireGuard config:\n```\n{output[:1500]}\n```")
 
@@ -1444,11 +1474,24 @@ async def add_openvpn_cmd(ctx, server: str, username: str):
     success, output = await ssh_exec(server, f"/opt/bibz-bot/manage-ovpn.sh add {username}")
 
     if success:
+        info = get_server(server)
+        host = info["host"]
+        port = info.get("port", 22)
+        msg = (
+            f"━━━ OPENVPN ACCOUNT ━━━\n"
+            f"Host     : {host}\n"
+            f"Port     : 1194\n"
+            f"User     : {username}\n"
+            f"Cert     : {output.strip()}\n"
+            f"────────────────────\n"
+            f"Download .ovpn:\n"
+            f"http://{host}:8000/{username}.ovpn\n"
+        )
         try:
-            await ctx.author.send(f"```\n=== OpenVPN Account ===\n{output}\n```")
+            await ctx.author.send(f"```\n{msg}\n```")
             await ctx.send(f"✅ OpenVPN account `{username}` created. Cek DM.")
         except:
-            await ctx.send(f"✅ OpenVPN account created.\n```\n{output}\n```")
+            await ctx.send(f"✅ OpenVPN account created.\n```\n{msg}\n```")
     else:
         await ctx.send(f"❌ Failed to create OpenVPN account:\n```\n{output[:1500]}\n```")
 
@@ -1476,7 +1519,17 @@ async def add_slowdns_cmd(ctx, server: str, username: str):
             if line.startswith("HOST:"):
                 host = line[5:]
                 break
-        msg = f"=== SlowDNS Account ===\nHost: {host}\nUser: {username}\nDNS: 8.8.8.8:53"
+        msg = (
+            f"━━━ SLOWDNS ACCOUNT ━━━\n"
+            f"Host     : {host}\n"
+            f"Username : {username}\n"
+            f"DNS      : 8.8.8.8:53\n"
+            f"────────────────────\n"
+            f"SlowDNS config:\n"
+            f"nameserver 8.8.8.8\n"
+            f"port 53\n"
+            f"address /{host}/127.0.0.1\n"
+        )
         try:
             await ctx.author.send(f"```\n{msg}\n```")
             await ctx.send(f"✅ SlowDNS account `{username}` created. Cek DM.")
