@@ -85,10 +85,10 @@ All require Administrator permissions.
 
 | Command | Example |
 |---|---|
-| `!add-server <name> <host> [port]` | `!add-server vps1 192.168.1.1 22` |
+| `!add-server <name> <host> [port] [user] [pass]` | `!add-server vps1 192.168.1.1 22 root pass123` |
 | `!remove-server <name>` | `!remove-server vps1` |
 | `!list-servers` | list registered VPS |
-| `!setup-server <name>` | install all services on VPS |
+| `!setup-server <name>` | install all services on VPS (auto after add-server) |
 | `!add-ssh <server> <user> <pass>` | `!add-ssh vps1 alice pass123` |
 | `!add-vmess <server> <user>` | `!add-vmess vps1 alice` |
 | `!add-wireguard <server> <user>` | `!add-wireguard vps1 alice` |
