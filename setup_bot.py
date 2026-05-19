@@ -9,7 +9,9 @@ import logging
 import warnings
 from typing import Optional
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=Warning, module="asyncssh")
+warnings.filterwarnings("ignore", message=".*ARC4.*")
+warnings.filterwarnings("ignore", message=".*TripleDES.*")
 import discord
 from discord.ext import commands
 from server_config import (
