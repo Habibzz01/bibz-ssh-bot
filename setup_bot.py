@@ -6,7 +6,10 @@ A one-time setup bot to automatically configure your Discord server
 import os
 import asyncio
 import logging
+import warnings
 from typing import Optional
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 import discord
 from discord.ext import commands
 from server_config import (
