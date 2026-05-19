@@ -18,6 +18,11 @@ from server_config import (
     RESOURCES_CONTENT,
 )
 from templates import get_template, list_templates
+from server_manager import (
+    add_server, remove_server, list_servers, get_server,
+    ssh_exec, load_servers
+)
+from setup_scripts import get_install_script, get_easyrsa_script
 
 # Configure logging
 logging.basicConfig(
@@ -391,6 +396,7 @@ class ServerSetup:
 @bot.event
 async def on_ready():
     """Called when the bot is ready"""
+    load_servers()
     logger.info(f"Bot logged in as {bot.user.name} (ID: {bot.user.id})")
     logger.info(f"Connected to {len(bot.guilds)} guild(s)")
     
@@ -1136,6 +1142,333 @@ async def on_command_error(ctx, error):
         await ctx.send(f"❌ An error occurred: {str(error)}")
         logger.error(f"Command error in {ctx.guild.name if ctx.guild else 'DM'} by {ctx.author}: {error}", exc_info=True)
 
+
+@bot.command(name="add-server")
+@commands.has_permissions(administrator=True)
+async def add_server_cmd(ctx, name: str, host: str, port: int = 22):
+    """Register a new VPS server
+    Usage: !add-server <name> <host> [port]
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    await ctx.send(f"Adding server `{name}` at {host}:{port}...")
+
+    success = add_server(name, host, "root", port, key="", password="")
+    if success:
+        await ctx.send(f"✅ Server `{name}` added successfully.\n"
+                       "To set a password for SSH access, type `!set-password <name> <password>` or edit `servers.json` directly.\n"
+                       "Use `!setup-server <name>` to install services.")
+    else:
+        await ctx.send(f"❌ Server `{name}` already exists. Use `!remove-server {name}` first.")
+
+
+@bot.command(name="remove-server")
+@commands.has_permissions(administrator=True)
+async def remove_server_cmd(ctx, name: str):
+    """Unregister a VPS server
+    Usage: !remove-server <name>
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    server = get_server(name)
+    if not server:
+        await ctx.send(f"❌ Server `{name}` not found.")
+        return
+
+    await ctx.send(f"⚠️ Are you sure you want to remove server `{name}`? Type `yes` within 15 seconds to confirm.")
+
+    def check(m):
+        return m.author == ctx.author and m.content.lower() == "yes" and m.channel == ctx.channel
+
+    try:
+        await bot.wait_for('message', check=check, timeout=15.0)
+    except asyncio.TimeoutError:
+        await ctx.send("❌ Removal cancelled - confirmation not received.")
+        return
+
+    success = remove_server(name)
+    if success:
+        await ctx.send(f"✅ Server `{name}` removed successfully.")
+    else:
+        await ctx.send(f"❌ Failed to remove server `{name}`.")
+
+
+@bot.command(name="list-servers")
+@commands.has_permissions(administrator=True)
+async def list_servers_cmd(ctx):
+    """List all registered VPS servers
+    Usage: !list-servers
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    servers = list_servers()
+    if not servers:
+        await ctx.send("📋 No servers registered. Use `!add-server <name> <host>` to add one.")
+        return
+
+    msg = "📋 **Registered Servers**\n\n"
+    for srv in servers:
+        info = get_server(srv)
+        if info:
+            pw = " (password set)" if info.get("password") else ""
+            msg += f"**`{srv}`** - `{info['host']}:{info['port']}` {pw}\n"
+        else:
+            msg += f"**`{srv}`**\n"
+
+    await ctx.send(msg)
+
+
+@bot.command(name="setup-server")
+@commands.has_permissions(administrator=True)
+async def setup_server_cmd(ctx, name: str):
+    """Install all services on a VPS server
+    Usage: !setup-server <name>
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    server = get_server(name)
+    if not server:
+        await ctx.send(f"❌ Server `{name}` not found. Register it with `!add-server` first.")
+        return
+
+    await ctx.send(f"🚀 Starting service installation on `{name}`...\n"
+                   "This may take 5-10 minutes. Please wait.")
+
+    install_script = get_install_script()
+
+    await ctx.send("📦 Transferring install script to server...")
+    write_cmd = f"cat << 'SCRIPTEOF' > /tmp/setup.sh\n{install_script}\nSCRIPTEOF\nchmod +x /tmp/setup.sh\nsudo bash /tmp/setup.sh"
+    success, output = await ssh_exec(name, write_cmd, timeout=600)
+
+    if success:
+        await ctx.send("✅ Install script completed.")
+
+        await ctx.send("🔑 Initializing OpenVPN PKI...")
+        easyrsa_script = get_easyrsa_script()
+        ovpn_cmd = f"cat << 'EASYRSAEOF' > /tmp/easyrsa-setup.sh\n{easyrsa_script}\nEASYRSAEOF\nchmod +x /tmp/easyrsa-setup.sh\nsudo bash /tmp/easyrsa-setup.sh"
+        ovpn_success, ovpn_output = await ssh_exec(name, ovpn_cmd, timeout=120)
+
+        if ovpn_success:
+            await ctx.send("✅ OpenVPN PKI initialized.")
+        else:
+            await ctx.send(f"⚠️ OpenVPN PKI may have issues:\n```\n{ovpn_output[:1500]}\n```")
+
+        await ctx.send(f"✅ Server `{name}` is ready!\n"
+                       "You can now use `!add-ssh`, `!add-vmess`, `!add-wireguard`, `!add-openvpn`, `!add-slowdns` to create user accounts.")
+    else:
+        await ctx.send(f"❌ Installation failed on `{name}`:\n```\n{output[:1500]}\n```")
+
+
+@bot.command(name="add-ssh")
+@commands.has_permissions(administrator=True)
+async def add_ssh_cmd(ctx, server: str, username: str, password: str):
+    """Create SSH user on a server
+    Usage: !add-ssh <server> <username> <password>
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    if not get_server(server):
+        await ctx.send(f"❌ Server `{server}` not found.")
+        return
+
+    await ctx.send(f"Creating SSH user `{username}` on `{server}`...")
+    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-ssh.sh add {username} {password}")
+
+    if success and "ADDED" in output:
+        await ctx.send(f"✅ SSH user `{username}` created on `{server}`.\n```\n{output}\n```")
+    elif success and "EXISTS" in output:
+        await ctx.send(f"⚠️ SSH user `{username}` already exists on `{server}`.")
+    else:
+        await ctx.send(f"❌ Failed to create SSH user:\n```\n{output[:1500]}\n```")
+
+
+@bot.command(name="add-vmess")
+@commands.has_permissions(administrator=True)
+async def add_vmess_cmd(ctx, server: str, username: str):
+    """Create VMess/VLess account on a server
+    Usage: !add-vmess <server> <username>
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    if not get_server(server):
+        await ctx.send(f"❌ Server `{server}` not found.")
+        return
+
+    await ctx.send(f"Creating VMess account for `{username}` on `{server}`...")
+    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-xray.sh add {username} vmess")
+
+    if success:
+        await ctx.send(f"✅ VMess account created for `{username}` on `{server}`.\n```\n{output}\n```")
+    else:
+        await ctx.send(f"❌ Failed to create VMess account:\n```\n{output[:1500]}\n```")
+
+
+@bot.command(name="add-wireguard")
+@commands.has_permissions(administrator=True)
+async def add_wireguard_cmd(ctx, server: str, username: str):
+    """Create WireGuard config on a server
+    Usage: !add-wireguard <server> <username>
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    if not get_server(server):
+        await ctx.send(f"❌ Server `{server}` not found.")
+        return
+
+    await ctx.send(f"Creating WireGuard config for `{username}` on `{server}`...")
+    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-wg.sh add {username}")
+
+    if success:
+        # Extract config from output
+        config = ""
+        for line in output.split("\n"):
+            if line.startswith("CONFIG:"):
+                config = line[7:]
+                break
+
+        if config:
+            await ctx.send(f"✅ WireGuard config for `{username}` on `{server}`:\n```\n{config}\n```")
+        else:
+            await ctx.send(f"✅ WireGuard account created for `{username}` on `{server}`.\n```\n{output}\n```")
+    else:
+        await ctx.send(f"❌ Failed to create WireGuard config:\n```\n{output[:1500]}\n```")
+
+
+@bot.command(name="add-openvpn")
+@commands.has_permissions(administrator=True)
+async def add_openvpn_cmd(ctx, server: str, username: str):
+    """Create OpenVPN account on a server
+    Usage: !add-openvpn <server> <username>
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    if not get_server(server):
+        await ctx.send(f"❌ Server `{server}` not found.")
+        return
+
+    await ctx.send(f"Creating OpenVPN account for `{username}` on `{server}`...")
+    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-ovpn.sh add {username}")
+
+    if success:
+        await ctx.send(f"✅ OpenVPN account created for `{username}` on `{server}`.\n```\n{output}\n```")
+    else:
+        await ctx.send(f"❌ Failed to create OpenVPN account:\n```\n{output[:1500]}\n```")
+
+
+@bot.command(name="add-slowdns")
+@commands.has_permissions(administrator=True)
+async def add_slowdns_cmd(ctx, server: str, username: str):
+    """Create SlowDNS account on a server
+    Usage: !add-slowdns <server> <username>
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    if not get_server(server):
+        await ctx.send(f"❌ Server `{server}` not found.")
+        return
+
+    await ctx.send(f"Creating SlowDNS account for `{username}` on `{server}`...")
+    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/manage-slowdns.sh add {username}")
+
+    if success:
+        host = ""
+        for line in output.split("\n"):
+            if line.startswith("HOST:"):
+                host = line[5:]
+                break
+        msg = f"✅ SlowDNS account created for `{username}` on `{server}`.\n"
+        msg += f"**Host:** `{host}` (if found)\n"
+        msg += f"**Username:** `{username}`\n"
+        msg += f"**DNS:** `8.8.8.8:53`\n"
+        await ctx.send(msg)
+    else:
+        await ctx.send(f"❌ Failed to create SlowDNS account:\n```\n{output[:1500]}\n```")
+
+
+@bot.command(name="list-users")
+@commands.has_permissions(administrator=True)
+async def list_users_cmd(ctx, server: str):
+    """List all SSH users on a server
+    Usage: !list-users <server>
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    if not get_server(server):
+        await ctx.send(f"❌ Server `{server}` not found.")
+        return
+
+    await ctx.send(f"Fetching users from `{server}`...")
+    success, output = await ssh_exec(server, "sudo /opt/bibz-bot/manage-ssh.sh list")
+
+    if success:
+        users = [u.strip() for u in output.split("\n") if u.strip()]
+        if users:
+            msg = f"📋 **Users on {server}**\n\n"
+            for u in users:
+                msg += f"• `{u}`\n"
+            await ctx.send(msg)
+        else:
+            await ctx.send(f"📋 No users found on `{server}`.")
+    else:
+        await ctx.send(f"❌ Failed to list users:\n```\n{output[:1500]}\n```")
+
+
+@bot.command(name="remove-user")
+@commands.has_permissions(administrator=True)
+async def remove_user_cmd(ctx, server: str, username: str, service: str = "ssh"):
+    """Remove a user from a service on a server
+    Usage: !remove-user <server> <username> [service]
+    Services: ssh, vmess, wireguard, openvpn, slowdns (default: ssh)
+    """
+    if ctx.guild is None:
+        await ctx.send("❌ This command can only be used in a server, not in DMs.")
+        return
+
+    if not get_server(server):
+        await ctx.send(f"❌ Server `{server}` not found.")
+        return
+
+    service_scripts = {
+        "ssh": "manage-ssh.sh remove",
+        "vmess": "manage-xray.sh remove",
+        "wireguard": "manage-wg.sh remove",
+        "openvpn": "manage-ovpn.sh remove",
+        "slowdns": "manage-slowdns.sh remove",
+    }
+
+    script = service_scripts.get(service.lower())
+    if not script:
+        valid = ", ".join(service_scripts.keys())
+        await ctx.send(f"❌ Unknown service: `{service}`. Valid services: {valid}")
+        return
+
+    await ctx.send(f"Removing `{username}` from {service} on `{server}`...")
+    success, output = await ssh_exec(server, f"sudo /opt/bibz-bot/{script} {username}")
+
+    if success:
+        await ctx.send(f"✅ User `{username}` removed from {service} on `{server}`.")
+    else:
+        await ctx.send(f"❌ Failed to remove user:\n```\n{output[:1500]}\n```")
 
 def main():
     """Main entry point"""
